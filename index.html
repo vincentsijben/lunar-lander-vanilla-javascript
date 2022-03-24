@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            background: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        let canvas = document.createElement("canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+
+        let ctx = canvas.getContext("2d");
+
+        let particles = [];
+        let particleCount = 100;
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle(20 * i, 100));
+        }
+
+        let updater = setInterval(update, 1000 / 60);
+
+        function update() {
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+for(let i=0;i< particleCount; i++){
+    particles[i].draw();
+    particles[i].update();
+}
+
+        }
+
+        function Particle(x, y) {
+
+            this.x = x;
+            this.y = y;
+            this.width = 5;
+            this.height = 5;
+            this.gravity = 0.1;
+            this.velocityY = Math.random() * 10;
+
+            this.draw = function () {
+                ctx.fillStyle = "red";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            this.update = function () {
+
+                this.y = this.y + this.velocityY;
+                this.velocityY += this.gravity;
+
+                if (this.y > canvas.height - this.height && this.velocityY > 0) {
+                    this.velocityY = -this.velocityY * 0.8;
+                }
+            }
+
+        }
+    </script>
+</body>
+
+</html>

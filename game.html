@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        let canvas = document.createElement("canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+
+        const STATE_START = 0;
+        const STATE_PLAYING = 1;
+        const STATE_GAMEOVER = 2;
+        const STATE_WIN = 3;
+        const STATE_RESTART = 4;
+
+        let ctx = canvas.getContext("2d");
+
+        setInterval(draw, 1000 / 60);
+
+        let particle = new Rectangle();
+        let moveRight = false;
+        let movingUp = false;
+        let moveLeft = false;
+        let kartels = [];
+        let gameState = STATE_START;
+
+        function init() {
+            let steps = canvas.width / 15;
+
+            let start = canvas.height - 200;
+            let currentY = start;
+            for (let i = 0; steps > i; i++) {
+                kartels.push(currentY);
+                currentY = Math.random() > 0.5 ? currentY - 10 : currentY + 10;
+            }
+
+            gameState = STATE_START;
+        }
+
+        init();
+
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.beginPath();
+            ctx.strokeStyle = "#000";
+            // ctx.moveTo(canvas.width/15, kartels[0]);
+            ctx.moveTo(0, kartels[0]);
+            let curY = 0;
+            for (let i = 0; kartels.length > i; i++) {
+
+
+                ctx.lineTo(canvas.width / 15 * i, kartels[i]);
+                // curY += canvas.width / 15;
+                ctx.stroke();
+            }
+
+            switch (gameState) {
+                case STATE_START:
+                    ctx.font = "25px Comic Sans MS";
+                    ctx.fillStyle = "#000";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Mars Lander! Press space to start!", canvas.width / 2, canvas.height / 2);
+
+                    break;
+                case STATE_PLAYING:
+                    particle.update();
+                    particle.draw();
+                    break;
+                case STATE_GAMEOVER:
+                    ctx.font = "25px Comic Sans MS";
+                    ctx.fillStyle = "#f00";
+                    ctx.textAlign = "center";
+                    ctx.fillText("GAME OVER! You crashed! Press space to retry", canvas.width / 2, canvas.height / 2);
+
+                    break;
+                case STATE_WIN:
+                    ctx.font = "25px Comic Sans MS";
+                    ctx.fillStyle = "#0f0";
+                    ctx.textAlign = "center";
+                    ctx.fillText("WHOOHOOW! You rock. Well done. Press space to retry", canvas.width / 2, canvas.height / 2);
+
+                    break;
+                case STATE_RESTART:
+                    particle.reset();
+                    gameState = STATE_PLAYING;
+                    break;
+            }
+
+
+        }
+
+        function Rectangle() {
+            this.width = 10;
+            this.height = 10;
+            this.posY = 100;
+            this.posX = 100;
+            this.velY = 0;
+            this.accY = 0.09;
+            this.velX = 2;
+            this.thrustY = 0;
+            this.thrustX = 0;
+            this.fuel = 300;
+
+            this.color = "#dd0000";
+
+            this.draw = function () {
+                ctx.fillStyle = "#dd0000";
+                ctx.fillRect(this.posX, this.posY, this.width, this.height);
+
+                ctx.font = "25px Comic Sans MS";
+                if (this.fuel == 0){
+                    ctx.fillStyle = "#f00";
+                } else if (this.fuel < 100) {
+                    ctx.fillStyle = "#ff0";
+                } else {
+                    ctx.fillStyle = "#000";
+                }
+                
+                ctx.textAlign = "left";
+                ctx.fillText("Fuel " + this.fuel, 50, 50);
+
+            }
+
+            this.update = function () {
+                this.posX += this.velX;
+                this.posY += this.velY;
+                this.velY += this.accY;
+                this.velY -= this.thrustY;
+                this.velX -= this.thrustX;
+
+                if (movingUp && this.fuel > 0) {
+                    this.thrustY = 0.2;
+                } else {
+                    this.thrustY = 0;
+                }
+
+                if (moveLeft && this.fuel > 0) {
+                    this.thrustX = 0.04;
+                } else if (moveRight && this.fuel > 0) {
+                    this.thrustX = -0.04;
+                } else {
+                    this.thrustX = 0;
+                }
+
+                if (movingUp || moveLeft || moveRight) {
+                    this.fuel--;
+                    if (this.fuel < 0) this.fuel = 0;
+                }
+
+                let index = Math.floor(this.posX / (canvas.width / 15));
+
+
+
+                if (this.posY >= kartels[index] - this.height) {
+
+                    if (this.velY > 2) {
+                        gameState = STATE_GAMEOVER;
+                        console.log("boom!")
+                    } else {
+                        gameState = STATE_WIN;
+                        console.log("safe landing!")
+                    }
+                }
+
+            }
+
+            this.reset = function () {
+                this.width = 10;
+                this.height = 10;
+                this.posY = 100;
+                this.posX = 100;
+                this.velY = 0;
+                this.accY = 0.09;
+                this.velX = 2;
+                this.thrustY = 0;
+                this.thrustX = 0;
+                this.color = "#dd0000";
+            }
+
+        }
+
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
+
+        function onKeyDown(e) {
+
+            if (gameState == STATE_START || gameState == STATE_GAMEOVER || gameState == STATE_WIN) {
+                if (e.keyCode == 32) {
+                    gameState = STATE_RESTART;
+                }
+            }
+            if (e.keyCode == 38) movingUp = true;
+            else if (e.keyCode == 37) moveLeft = true;
+            else if (e.keyCode == 39) moveRight = true;
+        }
+
+        function onKeyUp(e) {
+            if (e.keyCode == 38) movingUp = false;
+            else if (e.keyCode == 37) moveLeft = false;
+            else if (e.keyCode == 39) moveRight = false;
+        }
+
+    </script>
+</body>
+
+</html>
